@@ -40,11 +40,11 @@ using namespace BAGuitar;
 #define SD_CS     4  // CS for SD card, can use any pin
 
 #include <Adafruit_GFX.h>    // Core graphics library
-#include <ST7735_t3.h> // Hardware-specific library
+#include <Adafruit_ST7735.h> // Hardware-specific library
 #include <SPI.h>
 
 // Option 1: use any pins but a little slower
-ST7735_t3 tft = ST7735_t3(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 // GUItool: begin automatically generated code
 AudioSynthWaveformSine   sine1;          //xy=842,814
@@ -86,13 +86,13 @@ void setup() {
   
   // Audio connections require memory to work.  For more
   // detailed information, see the MemoryAndCpuUsage example
-  AudioMemory(12);
+  AudioMemory(64);
 
   // Comment these out if not using the audio adaptor board.
   // If the codec was already powered up (due to reboot) power itd own first
   codecControl.disable();
   delay(100);
-  AudioMemory(24);
+  //AudioMemory(24);
 
   Serial.println("Enabling codec...\n");
   codecControl.enable();
@@ -109,31 +109,50 @@ void setup() {
   waveformMod1.begin(current_waveform);
 
 
-  tft.initR(INITR_144GREENTAB);
+  tft.initR(INITR_GREENTAB);
   tft.fillScreen(ST7735_BLACK);
+  tft.setRotation(3);
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(2);
   tft.println("LFO-01");
   // uncomment to try modulating phase instead of frequency
   //waveformMod1.phaseModulation(720.0);
+  //
   queue1.begin();
 }
-
+int16_t buffer[128];
+int16_t lastbuffer[128];
 long last_millis_scope =0;
+
+byte b = 0;
+bool refreshDisplay = true;
+
 void loop() {
   long current_millis = millis();
   
-  if (queue1.available() && current_millis > last_millis_scope + 20) {
+  if (queue1.available() && refreshDisplay) {
     last_millis_scope = current_millis;
-    tft.fillScreen(ST7735_BLACK);
-    int16_t buffer[128];
-    memcpy(buffer, queue1.readBuffer(), 128);
-
-    for (byte b = 1; b < 63; b++)
-      tft.drawLine((b-1)*2, 64 - (buffer[b-1] >> 9),b*2, 64-(buffer[b] >> 9), ST7735_RED);
-    
-    queue1.freeBuffer();  
+    memcpy(lastbuffer, buffer, 256);
+    memcpy(buffer, queue1.readBuffer(), 256);
+    queue1.freeBuffer();
+    refreshDisplay = false;
   }
+  
+  b = b + 1;
+  if (b == 127) 
+  {
+    b = 1;
+    refreshDisplay = true;
+    //delay (10);
+  }
+  
+  int16_t z = (buffer[b] >> 9);
+  int16_t z2 = (lastbuffer[b] >> 9);
+  //tft.drawPixel(b, 64 + z2, ST7735_BLACK); 
+  //tft.drawPixel(b, 64 + z, ST7735_RED); 
+  tft.drawLine(b, 64 + (lastbuffer[b-1] >> 9), b + 1, 64 + (lastbuffer[b] >> 9), ST7735_BLACK);
+  tft.drawLine(b, 64 + (buffer[b-1] >> 9), b + 1, 64 + (buffer[b] >> 9), ST7735_GREEN);
+  //lastbuffer[b] = buffer[b];
   
   long newLeft, newRight, newCenter;
   newLeft = knobLeft.read();
@@ -160,12 +179,12 @@ void loop() {
   button1.update();
   button2.update();
   float knob_A2 = (float)positionLeft / 1023.0;
-  float knob_A3 = (float)positionRight / 1023.0;
+  float knob_A3 = (float)positionRight / 256.0;
 
   // use Knobsto adjust the amount of modulation
-  sine1.amplitude(knob_A2);
-  sine1.frequency(knob_A3);
-
+  sine1.amplitude(knob_A2 + 0.3);
+  sine1.frequency(knob_A3 + 0.1);
+  waveformMod1.frequency(positionCenter + 261.63);
   // Button 0 or 2 changes the waveform type
   if (button0.fallingEdge() || button2.fallingEdge()) {
     switch (current_waveform) {
@@ -210,4 +229,3 @@ void loop() {
   }
   
 }
-
