@@ -130,12 +130,18 @@ bool refreshDisplay = true;
 void loop() {
   long current_millis = millis();
   
-  if (queue1.available() && refreshDisplay) {
-    last_millis_scope = current_millis;
-    memcpy(lastbuffer, buffer, 256);
-    memcpy(buffer, queue1.readBuffer(), 256);
-    queue1.freeBuffer();
-    refreshDisplay = false;
+  if (queue1.available() ) {
+    if (!refreshDisplay) {
+      queue1.readBuffer();
+      queue1.freeBuffer();
+    } else {
+      last_millis_scope = current_millis;
+      memcpy(lastbuffer, buffer, 256);
+      memcpy(buffer, queue1.readBuffer(), 256);
+      queue1.freeBuffer();
+      refreshDisplay = false;
+      b = 0;
+    }
   }
   
   b = b + 1;
