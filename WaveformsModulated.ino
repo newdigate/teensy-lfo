@@ -49,15 +49,18 @@ using namespace BAGuitar;
 ST7735_t3 tft = ST7735_t3(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 // GUItool: begin automatically generated code
-AudioSynthWaveformSine   sine1;          //xy=842,814
-AudioSynthWaveformModulated waveformMod1;   //xy=1063.5714797973633,785.9999866485596
-AudioOutputI2S           i2s1;           //xy=1331,871
-AudioRecordQueue         queue1;         //xy=1337.142765045166,953.1428050994873
+AudioSynthWaveformModulated   sine1;          //xy=842,814
+AudioSynthWaveformModulated waveformMod1;   //xy=1063.5714721679688,786
+AudioRecordQueue         queue1;         //xy=1239.142822265625,1039.142822265625
+AudioMixer4              mixer1;         //xy=1295,844
+AudioOutputI2S           i2s1;           //xy=1452,853
 AudioConnection          patchCord1(sine1, 0, waveformMod1, 0);
-AudioConnection          patchCord2(waveformMod1, 0, i2s1, 0);
-AudioConnection          patchCord3(waveformMod1, queue1);
-AudioConnection          patchCord4(waveformMod1, 0, i2s1, 1);
+AudioConnection          patchCord2(waveformMod1, queue1);
+AudioConnection          patchCord3(waveformMod1, 0, mixer1, 0);
+AudioConnection          patchCord4(mixer1, 0, i2s1, 0);
+AudioConnection          patchCord5(mixer1, 0, i2s1, 1);
 // GUItool: end automatically generated code
+
 
 BAAudioControlWM8731      codecControl;
 
@@ -70,11 +73,16 @@ Encoder knobCenter(10, 16);
 Encoder knobRight(25, 26);
 
 int current_waveform=0;
+int current_mod_waveform=0;
 
 long positionLeft  = -999;
 long positionCenter  = -999;
 long positionRight = -999;
 
+
+float offset_sine1amplitude = 0.5;
+float offset_sine1frequency = 0.01;
+float offset_waveformMod1frequency = 261.63;
 extern const int16_t myWaveform[256];  // defined in myWaveform.ino
 
 void setup() {
@@ -93,6 +101,7 @@ void setup() {
   // Comment these out if not using the audio adaptor board.
   // If the codec was already powered up (due to reboot) power itd own first
   codecControl.disable();
+  mixer1.gain(0, 0.3);
   delay(100);
   //AudioMemory(24);
 
@@ -103,20 +112,21 @@ void setup() {
   waveformMod1.arbitraryWaveform(myWaveform, 172.0);
 
   // Configure for middle C note without modulation
-  waveformMod1.frequency(261.63);
+  waveformMod1.frequency(offset_waveformMod1frequency);
   waveformMod1.amplitude(1.0);
-  sine1.frequency(1); // Sine waves are low frequency oscillators (LFO)
-
+  sine1.begin(WAVEFORM_SINE);
+  sine1.frequency(offset_sine1frequency); // Sine waves are low frequency oscillators (LFO)
+  sine1.amplitude(offset_sine1amplitude);
   current_waveform = WAVEFORM_TRIANGLE_VARIABLE;
   waveformMod1.begin(current_waveform);
-
 
   tft.initR(INITR_GREENTAB);
   tft.fillScreen(ST7735_BLACK);
   tft.setRotation(3);
-  tft.setTextColor(ST7735_YELLOW);
-  tft.setTextSize(2);
-  tft.println("LFO-01");
+  tft.setTextColor(ST7735_BLUE);
+  tft.setTextSize(4);
+  tft.println("LFO");
+  tft.setTextSize(1);
   // uncomment to try modulating phase instead of frequency
   //waveformMod1.phaseModulation(720.0);
   //
@@ -131,6 +141,10 @@ bool refreshDisplay = true;
 bool clearDisplay = false;
 bool lastCycleDisplayWasRefreshed = false;
 
+float lastsine1amplitude = 0;
+float lastsine1frequency = 0;
+float lastwaveformMod1frequency = 0;
+
 void loop() {
   long current_millis = millis();
   
@@ -140,7 +154,8 @@ void loop() {
       queue1.freeBuffer();
     } else {
       if (clearDisplay) {
-        tft.fillScreen(ST7735_BLACK);
+        //tft.fillScreen(ST7735_BLACK);
+        tft.fillRect(1,32, 127, 64, ST7735_BLACK);
         clearDisplay = false;
         lastCycleDisplayWasRefreshed = true;
       } else 
@@ -164,7 +179,7 @@ void loop() {
   }
 
 
-  if (current_millis > last_millis_scope + 100) {
+  if (current_millis > last_millis_scope + 75) {
     refreshDisplay = true;
     clearDisplay = true;
     return;
@@ -174,9 +189,11 @@ void loop() {
   int16_t z2 = (lastbuffer[b] >> 9);
   //tft.drawPixel(b, 64 + z2, ST7735_BLACK); 
   //tft.drawPixel(b, 64 + z, ST7735_RED); 
-  if (!lastCycleDisplayWasRefreshed)
-    tft.drawLine(b, 64 + (lastbuffer[b-1] >> 10), b + 1, 64 + (lastbuffer[b] >> 10), ST7735_BLACK);
-  tft.drawLine(b, 64 + (buffer[b-1] >> 10), b + 1, 64 + (buffer[b] >> 10), ST7735_GREEN);
+  if (buffer[b] != lastbuffer[b] || buffer[b-1] != lastbuffer[b-1]) {
+    if (!lastCycleDisplayWasRefreshed)
+      tft.drawLine(b, 64 + (lastbuffer[b-1] >> 10), b + 1, 64 + (lastbuffer[b] >> 10), ST7735_BLACK);
+    tft.drawLine(b, 64 + (buffer[b-1] >> 10), b + 1, 64 + (buffer[b] >> 10), ST7735_GREEN);
+  }
   //lastbuffer[b] = buffer[b];
   
   long newLeft, newRight, newCenter;
@@ -197,21 +214,66 @@ void loop() {
     positionLeft = newLeft;
     positionRight = newRight;
     positionCenter = newCenter;
+
+    float sine1amplitude = offset_sine1amplitude + (float)positionLeft / 256.0;
+    float sine1frequency = offset_sine1frequency + (float)positionRight / 256.0;
+    float waveformMod1frequency = offset_waveformMod1frequency + (float)positionCenter / 10;
+    
+    // use Knobsto adjust the amount of modulation
+    sine1.amplitude(sine1amplitude);
+    sine1.frequency(sine1frequency);
+    waveformMod1.frequency(waveformMod1frequency);
+
+    if ( lastsine1frequency != sine1frequency ) {
+      tft.setTextColor(ST7735_BLACK);
+      tft.setCursor(1,1);
+      tft.print("mod frq: ");
+      tft.println(lastsine1frequency);
+      
+      tft.setTextColor(ST7735_YELLOW);
+      tft.setCursor(1,1);
+      tft.print("mod frq: ");
+      tft.println(sine1frequency);
+    }
+    
+    if ( lastsine1amplitude != sine1amplitude ) {
+      tft.setTextColor(ST7735_BLACK);
+      tft.setCursor(1,9);
+      tft.print("mod amp: ");
+      tft.println(lastsine1amplitude);  
+      
+      tft.setTextColor(ST7735_YELLOW);
+      tft.setCursor(1,9);
+      tft.print("mod amp: ");
+      tft.println(sine1amplitude);  
+     }
+
+    if (lastwaveformMod1frequency != waveformMod1frequency) {
+      tft.setTextColor(ST7735_BLACK);
+      tft.setCursor(1,17);
+      tft.print("freq: ");
+      tft.println(lastwaveformMod1frequency);   
+       
+      tft.setTextColor(ST7735_YELLOW);
+      tft.setCursor(1,17);
+      tft.print("freq: ");
+      tft.println(waveformMod1frequency);   
+    }
+
+    lastsine1amplitude = sine1amplitude;
+    lastsine1frequency = sine1frequency;
+    lastwaveformMod1frequency = waveformMod1frequency;
   }
   
   // Read the buttons and knobs, scale knobs to 0-1.0
   button0.update();
   button1.update();
   button2.update();
-  float knob_A2 = (float)positionLeft / 256.0;
-  float knob_A3 = (float)positionRight / 256.0;
+  
 
-  // use Knobsto adjust the amount of modulation
-  sine1.amplitude(knob_A2 + 0.1);
-  sine1.frequency(knob_A3 + 0.1);
-  waveformMod1.frequency(positionCenter + 261.63);
+  
   // Button 0 or 2 changes the waveform type
-  if (button0.fallingEdge() || button2.fallingEdge()) {
+  if (button0.fallingEdge()) {
     switch (current_waveform) {
       case WAVEFORM_SINE:
         current_waveform = WAVEFORM_SAWTOOTH;
@@ -253,4 +315,45 @@ void loop() {
     waveformMod1.begin(current_waveform);
   }
   
+  if (button1.fallingEdge()) {
+    switch (current_mod_waveform) {
+      case WAVEFORM_SINE:
+        current_mod_waveform = WAVEFORM_SAWTOOTH;
+        Serial.println("Sawtooth");
+        break;
+      case WAVEFORM_SAWTOOTH:
+        current_mod_waveform = WAVEFORM_SAWTOOTH_REVERSE;
+        Serial.println("Reverse Sawtooth");
+        break;
+      case WAVEFORM_SAWTOOTH_REVERSE:
+        current_mod_waveform = WAVEFORM_SQUARE;
+        Serial.println("Square");
+        break;
+      case WAVEFORM_SQUARE:
+        current_mod_waveform = WAVEFORM_TRIANGLE;
+        Serial.println("Triangle");
+        break;
+      case WAVEFORM_TRIANGLE:
+        current_mod_waveform = WAVEFORM_TRIANGLE_VARIABLE;
+        Serial.println("Variable Triangle");
+        break;
+      case WAVEFORM_TRIANGLE_VARIABLE:
+        current_mod_waveform = WAVEFORM_ARBITRARY;
+        Serial.println("Arbitary Waveform");
+        break;
+      case WAVEFORM_ARBITRARY:
+        current_mod_waveform = WAVEFORM_PULSE;
+        Serial.println("Pulse");
+        break;
+      case WAVEFORM_PULSE:
+        current_mod_waveform = WAVEFORM_SAMPLE_HOLD;
+        Serial.println("Sample & Hold");
+        break;
+      case WAVEFORM_SAMPLE_HOLD:
+        current_mod_waveform = WAVEFORM_SINE;
+        Serial.println("Sine");
+        break;
+    }
+    sine1.begin(current_mod_waveform);
+  }
 }
