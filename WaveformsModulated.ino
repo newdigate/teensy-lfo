@@ -101,7 +101,7 @@ void setup() {
   // Comment these out if not using the audio adaptor board.
   // If the codec was already powered up (due to reboot) power itd own first
   codecControl.disable();
-  mixer1.gain(0, 0.3);
+  mixer1.gain(0, 0.03);
   delay(100);
   //AudioMemory(24);
 
@@ -129,7 +129,17 @@ void setup() {
   tft.setTextSize(1);
   // uncomment to try modulating phase instead of frequency
   //waveformMod1.phaseModulation(720.0);
-  //
+
+  tft.setTextColor(ST7735_YELLOW);
+  tft.setCursor(1,1);
+  tft.print("mod frq:");
+
+  tft.setCursor(1,9);
+  tft.print("mod amp:");
+   
+  tft.setCursor(1,17);
+  tft.print("freq:");
+
   queue1.begin();
 }
 int16_t buffer[128];
@@ -155,7 +165,7 @@ void loop() {
     } else {
       if (clearDisplay) {
         //tft.fillScreen(ST7735_BLACK);
-        tft.fillRect(1,32, 127, 64, ST7735_BLACK);
+        tft.fillRect(1,48, 127, 32, ST7735_BLACK);
         clearDisplay = false;
         lastCycleDisplayWasRefreshed = true;
       } else 
@@ -179,7 +189,7 @@ void loop() {
   }
 
 
-  if (current_millis > last_millis_scope + 75) {
+  if (current_millis > last_millis_scope + 50) {
     refreshDisplay = true;
     clearDisplay = true;
     return;
@@ -189,10 +199,10 @@ void loop() {
   int16_t z2 = (lastbuffer[b] >> 9);
   //tft.drawPixel(b, 64 + z2, ST7735_BLACK); 
   //tft.drawPixel(b, 64 + z, ST7735_RED); 
-  if (buffer[b] != lastbuffer[b] || buffer[b-1] != lastbuffer[b-1]) {
+  if (buffer[b] >> 11 != lastbuffer[b] >> 11 || buffer[b-1] >> 11 != lastbuffer[b-1] >> 11) {
     if (!lastCycleDisplayWasRefreshed)
-      tft.drawLine(b, 64 + (lastbuffer[b-1] >> 10), b + 1, 64 + (lastbuffer[b] >> 10), ST7735_BLACK);
-    tft.drawLine(b, 64 + (buffer[b-1] >> 10), b + 1, 64 + (buffer[b] >> 10), ST7735_GREEN);
+      tft.drawLine(b, 64 + (lastbuffer[b-1] >> 11), b + 1, 64 + (lastbuffer[b] >> 11), ST7735_BLACK);
+    tft.drawLine(b, 64 + (buffer[b-1] >> 11), b + 1, 64 + (buffer[b] >> 11), ST7735_GREEN);
   }
   //lastbuffer[b] = buffer[b];
   
@@ -217,7 +227,7 @@ void loop() {
 
     float sine1amplitude = offset_sine1amplitude + (float)positionLeft / 256.0;
     float sine1frequency = offset_sine1frequency + (float)positionRight / 256.0;
-    float waveformMod1frequency = offset_waveformMod1frequency + (float)positionCenter / 10;
+    float waveformMod1frequency = offset_waveformMod1frequency + (float)positionCenter;
     
     // use Knobsto adjust the amount of modulation
     sine1.amplitude(sine1amplitude);
@@ -226,37 +236,31 @@ void loop() {
 
     if ( lastsine1frequency != sine1frequency ) {
       tft.setTextColor(ST7735_BLACK);
-      tft.setCursor(1,1);
-      tft.print("mod frq: ");
+      tft.setCursor(64,1);
       tft.println(lastsine1frequency);
       
       tft.setTextColor(ST7735_YELLOW);
-      tft.setCursor(1,1);
-      tft.print("mod frq: ");
+      tft.setCursor(64,1);
       tft.println(sine1frequency);
     }
     
     if ( lastsine1amplitude != sine1amplitude ) {
       tft.setTextColor(ST7735_BLACK);
-      tft.setCursor(1,9);
-      tft.print("mod amp: ");
+      tft.setCursor(64,9);
       tft.println(lastsine1amplitude);  
       
       tft.setTextColor(ST7735_YELLOW);
-      tft.setCursor(1,9);
-      tft.print("mod amp: ");
+      tft.setCursor(64,9);
       tft.println(sine1amplitude);  
      }
 
     if (lastwaveformMod1frequency != waveformMod1frequency) {
       tft.setTextColor(ST7735_BLACK);
-      tft.setCursor(1,17);
-      tft.print("freq: ");
+      tft.setCursor(64,17);
       tft.println(lastwaveformMod1frequency);   
        
       tft.setTextColor(ST7735_YELLOW);
-      tft.setCursor(1,17);
-      tft.print("freq: ");
+      tft.setCursor(64,17);
       tft.println(waveformMod1frequency);   
     }
 
