@@ -140,6 +140,20 @@ void setup() {
   tft.setCursor(1,17);
   tft.print("freq:");
 
+  tft.setCursor(1,97);
+  tft.print("wave:");
+
+  tft.setCursor(1,105);
+  tft.print("mod wave:");
+
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,97);
+        tft.println("Sine");  
+        
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,105);
+        tft.println("Sine");  
+        
   queue1.begin();
 }
 int16_t buffer[128];
@@ -195,10 +209,6 @@ void loop() {
     return;
   }
   
-  int16_t z = (buffer[b] >> 9);
-  int16_t z2 = (lastbuffer[b] >> 9);
-  //tft.drawPixel(b, 64 + z2, ST7735_BLACK); 
-  //tft.drawPixel(b, 64 + z, ST7735_RED); 
   if (buffer[b] >> 11 != lastbuffer[b] >> 11 || buffer[b-1] >> 11 != lastbuffer[b-1] >> 11) {
     if (!lastCycleDisplayWasRefreshed)
       tft.drawLine(b, 64 + (lastbuffer[b-1] >> 11), b + 1, 64 + (lastbuffer[b] >> 11), ST7735_BLACK);
@@ -281,38 +291,101 @@ void loop() {
     switch (current_waveform) {
       case WAVEFORM_SINE:
         current_waveform = WAVEFORM_SAWTOOTH;
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,97);
+        tft.println("Sine");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,97);
+        tft.println("Sawtooth");   
         Serial.println("Sawtooth");
         break;
       case WAVEFORM_SAWTOOTH:
         current_waveform = WAVEFORM_SAWTOOTH_REVERSE;
-        Serial.println("Reverse Sawtooth");
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,97);
+        tft.println("Sawtooth");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,97);
+        tft.println("Rev Saw");   
+        Serial.println("Rev Saw");
         break;
       case WAVEFORM_SAWTOOTH_REVERSE:
         current_waveform = WAVEFORM_SQUARE;
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,97);
+        tft.println("Rev Saw");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,97);
+        tft.println("Square");   
         Serial.println("Square");
         break;
       case WAVEFORM_SQUARE:
         current_waveform = WAVEFORM_TRIANGLE;
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,97);
+        tft.println("Square");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,97);
+        tft.println("Triangle");   
         Serial.println("Triangle");
         break;
       case WAVEFORM_TRIANGLE:
         current_waveform = WAVEFORM_TRIANGLE_VARIABLE;
-        Serial.println("Variable Triangle");
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,97);
+        tft.println("Triangle");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,97);
+        tft.println("Var Tri");   
+        Serial.println("Var Tri");
         break;
       case WAVEFORM_TRIANGLE_VARIABLE:
         current_waveform = WAVEFORM_ARBITRARY;
-        Serial.println("Arbitary Waveform");
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,97);
+        tft.println("Var Tri");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,97);
+        tft.println("Arbwave");  
+        Serial.println("Arbwave");
         break;
       case WAVEFORM_ARBITRARY:
         current_waveform = WAVEFORM_PULSE;
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,97);
+        tft.println("Arbwave");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,97);
+        tft.println("Pulse");  
         Serial.println("Pulse");
         break;
       case WAVEFORM_PULSE:
         current_waveform = WAVEFORM_SAMPLE_HOLD;
-        Serial.println("Sample & Hold");
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,97);
+        tft.println("Pulse");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,97);
+        tft.println("Samp&Hold");  
+        Serial.println("Samp&Hold");
         break;
       case WAVEFORM_SAMPLE_HOLD:
         current_waveform = WAVEFORM_SINE;
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,97);
+        tft.println("Samp&Hold");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,97);
+        tft.println("Sine");         
         Serial.println("Sine");
         break;
     }
@@ -323,38 +396,101 @@ void loop() {
     switch (current_mod_waveform) {
       case WAVEFORM_SINE:
         current_mod_waveform = WAVEFORM_SAWTOOTH;
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,105);
+        tft.println("Sine");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,105);
+        tft.println("Sawtooth");   
         Serial.println("Sawtooth");
         break;
       case WAVEFORM_SAWTOOTH:
         current_mod_waveform = WAVEFORM_SAWTOOTH_REVERSE;
-        Serial.println("Reverse Sawtooth");
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,105);
+        tft.println("Sawtooth");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,105);
+        tft.println("Rev Saw");  
+        Serial.println("Rev Saw");
         break;
       case WAVEFORM_SAWTOOTH_REVERSE:
         current_mod_waveform = WAVEFORM_SQUARE;
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,105);
+        tft.println("Rev Saw");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,105);
+        tft.println("Square");   
         Serial.println("Square");
         break;
       case WAVEFORM_SQUARE:
         current_mod_waveform = WAVEFORM_TRIANGLE;
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,105);
+        tft.println("Square");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,105);
+        tft.println("Triangle");   
         Serial.println("Triangle");
         break;
       case WAVEFORM_TRIANGLE:
         current_mod_waveform = WAVEFORM_TRIANGLE_VARIABLE;
-        Serial.println("Variable Triangle");
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,105);
+        tft.println("Triangle");   
+  
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,105);
+        tft.println("Var Tri");   
+        Serial.println("Var Tri");
         break;
       case WAVEFORM_TRIANGLE_VARIABLE:
         current_mod_waveform = WAVEFORM_ARBITRARY;
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,105);
+        tft.println("Var Tri");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,105);
+        tft.println("Arbwave");  
         Serial.println("Arbitary Waveform");
         break;
       case WAVEFORM_ARBITRARY:
         current_mod_waveform = WAVEFORM_PULSE;
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,105);
+        tft.println("Arbwave");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,105);
+        tft.println("Pulse");
         Serial.println("Pulse");
         break;
       case WAVEFORM_PULSE:
         current_mod_waveform = WAVEFORM_SAMPLE_HOLD;
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,105);
+        tft.println("Pulse");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,105);
+        tft.println("Samp&Hold");  
         Serial.println("Sample & Hold");
         break;
       case WAVEFORM_SAMPLE_HOLD:
         current_mod_waveform = WAVEFORM_SINE;
+        tft.setTextColor(ST7735_BLACK);
+        tft.setCursor(64,105);
+        tft.println("Samp&Hold");   
+         
+        tft.setTextColor(ST7735_YELLOW);
+        tft.setCursor(64,105);
+        tft.println("Sine");      
         Serial.println("Sine");
         break;
     }
