@@ -49,18 +49,20 @@ using namespace BAGuitar;
 ST7735_t3 tft = ST7735_t3(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 // GUItool: begin automatically generated code
-AudioSynthWaveformModulated   sine1;          //xy=842,814
-AudioSynthWaveformModulated waveformMod1;   //xy=1063.5714721679688,786
-AudioRecordQueue         queue1;         //xy=1239.142822265625,1039.142822265625
-AudioMixer4              mixer1;         //xy=1295,844
-AudioOutputI2S           i2s1;           //xy=1452,853
+AudioSynthWaveformModulated sine1;          //xy=307,132
+AudioInputI2S            i2s2;           //xy=432,240
+AudioSynthWaveformModulated waveformMod1;   //xy=528,104
+AudioRecordQueue         queue1;         //xy=704,357
+AudioMixer4              mixer1;         //xy=760,162
+AudioOutputI2S           i2s1;           //xy=917,171
 AudioConnection          patchCord1(sine1, 0, waveformMod1, 0);
-AudioConnection          patchCord2(waveformMod1, queue1);
-AudioConnection          patchCord3(waveformMod1, 0, mixer1, 0);
-AudioConnection          patchCord4(mixer1, 0, i2s1, 0);
-AudioConnection          patchCord5(mixer1, 0, i2s1, 1);
+AudioConnection          patchCord2(i2s2, 0, mixer1, 2);
+AudioConnection          patchCord3(i2s2, 1, mixer1, 3);
+AudioConnection          patchCord4(waveformMod1, queue1);
+AudioConnection          patchCord5(waveformMod1, 0, mixer1, 0);
+AudioConnection          patchCord6(mixer1, 0, i2s1, 0);
+AudioConnection          patchCord7(mixer1, 0, i2s1, 1);
 // GUItool: end automatically generated code
-
 
 BAAudioControlWM8731      codecControl;
 
@@ -102,6 +104,9 @@ void setup() {
   // If the codec was already powered up (due to reboot) power itd own first
   codecControl.disable();
   mixer1.gain(0, 0.03);
+  mixer1.gain(2, 0.4);
+  mixer1.gain(3, 0.4);
+  
   delay(100);
   //AudioMemory(24);
 
